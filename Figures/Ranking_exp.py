@@ -44,88 +44,6 @@ class Ranking_exp:
         print('p', self.p)
         print('q', self.q)
 
-    def calc_rank_analytic(self):
-
-        def sinh(x):
-            return np.sinh(x)
-        
-        def cosh(x):
-            return np.cosh(x)
-        
-        def tanh(x):
-            return np.tanh(x)
-        
-        def acosh(x):
-            return np.arccosh(x)
-
-        #set local parameters based on class parameters
-        n = self.n
-        k_o = self.k_o
-        k_s = self.k_s
-        k_d = self.k_d
-        p = self.p
-        q = self.q
-        c_reg = self.c_reg
-
-        alpha = self.alpha
-        alpha_prime = self.alpha_prime
-        lamb_val = self.lamb_val
-
-        def rank(i):
-            lamb = self.lamb_val
-            n = self.n
-
-            num = np.sinh(( ((n+1)/2) - i) * lamb)
-            denom = np.sinh(((n+1)/2) * lamb) - np.sinh(((n-1)/2) * lamb)
-            return num / denom
-        
-        def c_final():
-            lamb = self.lamb_val
-            n = self.n
-            p = self.p
-            q = self.q
-
-            num = ( np.sinh((n+1)/2 * lamb) - np.sinh((n-1)/2 * lamb)
-                    - np.sinh( (((n+1)/2 - p) * lamb) ) + np.sinh( (((n+1)/2 - q) * lamb) ))
-            
-            denom = ( np.sinh((n+1)/2 * lamb_val) - np.sinh((n-1)/2 * lamb_val) )
-            return num/denom
-        
-        def D_sim():
-            lamb = self.lamb_val
-            n = self.n
-            p = self.p
-            q = self.q
-
-            return cosh((q-1/2) * lamb) * sinh((n - (p+q)/2 + 1/2) * lamb) + cosh((n-p+1/2) * lamb) * sinh(((p+q)/2 - 1/2) * lamb)
-
-        def D_ij_til_part(i,j):
-            lamb = self.lamb_val
-
-            return cosh( (min(i,j)-1/2) * lamb ) * cosh( (n-(max(i,j)-1/2)) * lamb)
-        
-        def c_denom_2_part():
-            lamb = self.lamb_val
-            n = self.n
-            p = self.p
-            q = self.q
-
-            return ( sinh(lamb)*sinh(lamb*n) - 2 * sinh((q-p)/2 * lamb) * D_sim() )
-        
-        def rank_til(j):
-            c_final_val = c_final()
-            c_denom_2_part_val = c_denom_2_part()
-            D_jp_til_part_val = D_ij_til_part(j,p)
-            # print(f'D_jp_til_part_val: {D_jp_til_part_val}')
-            D_jq_til_part_val = D_ij_til_part(j,q)
-            # print(f'D_jq_til_part_val: {D_jq_til_part_val}')
-            return (c_final_val / c_denom_2_part_val) * (D_jp_til_part_val - D_jq_til_part_val)
-
-        ranks = np.zeros(n)
-        for i in range(1, n+1):
-            ranks[i-1] = rank(i) + rank_til(i)
-        return ranks
-
     def calc_rank_original(self):
 
         n = self.n
@@ -138,10 +56,10 @@ class Ranking_exp:
             denom = np.sinh(((n+1)/2) * lamb) - np.sinh(((n-1)/2) * lamb)
             return num / denom
 
-        ranks = np.zeros(n)
+        ranks_arr = np.zeros(n)
         for i in range(1, n+1):
-            ranks[i-1] = rank(i)
-        return ranks
+            ranks_arr[i-1] = rank(i)
+        return ranks_arr
 
     def calc_rank_perturbative(self):
 
@@ -220,10 +138,98 @@ class Ranking_exp:
             # print(f'D_jq_til_part_val: {D_jq_til_part_val}')
             return (c_final_val / c_denom_2_part_val) * (D_jp_til_part_val - D_jq_til_part_val)
 
+        rank_til_arr = np.zeros(n)
+        for i in range(1, n+1):
+            rank_til_arr[i-1] = rank_til(i)
+        return rank_til_arr
+
+    def calc_rank_analytic(self):
+
+        return self.calc_rank_original() + self.calc_rank_perturbative()
+
+    def calc_rank_analytic_prev(self):
+
+        def sinh(x):
+            return np.sinh(x)
+        
+        def cosh(x):
+            return np.cosh(x)
+        
+        def tanh(x):
+            return np.tanh(x)
+        
+        def acosh(x):
+            return np.arccosh(x)
+
+        #set local parameters based on class parameters
+        n = self.n
+        k_o = self.k_o
+        k_s = self.k_s
+        k_d = self.k_d
+        p = self.p
+        q = self.q
+        c_reg = self.c_reg
+
+        alpha = self.alpha
+        alpha_prime = self.alpha_prime
+        lamb_val = self.lamb_val
+
+        def rank(i):
+            lamb = self.lamb_val
+            n = self.n
+
+            num = np.sinh(( ((n+1)/2) - i) * lamb)
+            denom = np.sinh(((n+1)/2) * lamb) - np.sinh(((n-1)/2) * lamb)
+            return num / denom
+        
+        def c_final():
+            lamb = self.lamb_val
+            n = self.n
+            p = self.p
+            q = self.q
+
+            num = ( np.sinh((n+1)/2 * lamb) - np.sinh((n-1)/2 * lamb)
+                    - np.sinh( (((n+1)/2 - p) * lamb) ) + np.sinh( (((n+1)/2 - q) * lamb) ))
+            
+            denom = ( np.sinh((n+1)/2 * lamb_val) - np.sinh((n-1)/2 * lamb_val) )
+            return num/denom
+        
+        def D_sim():
+            lamb = self.lamb_val
+            n = self.n
+            p = self.p
+            q = self.q
+
+            return cosh((q-1/2) * lamb) * sinh((n - (p+q)/2 + 1/2) * lamb) + cosh((n-p+1/2) * lamb) * sinh(((p+q)/2 - 1/2) * lamb)
+
+        def D_ij_til_part(i,j):
+            lamb = self.lamb_val
+
+            return cosh( (min(i,j)-1/2) * lamb ) * cosh( (n-(max(i,j)-1/2)) * lamb)
+        
+        def c_denom_2_part():
+            lamb = self.lamb_val
+            n = self.n
+            p = self.p
+            q = self.q
+
+            return ( sinh(lamb)*sinh(lamb*n) - 2 * sinh((q-p)/2 * lamb) * D_sim() )
+        
+        def rank_til(j):
+            c_final_val = c_final()
+            c_denom_2_part_val = c_denom_2_part()
+            D_jp_til_part_val = D_ij_til_part(j,p)
+            # print(f'D_jp_til_part_val: {D_jp_til_part_val}')
+            D_jq_til_part_val = D_ij_til_part(j,q)
+            # print(f'D_jq_til_part_val: {D_jq_til_part_val}')
+            return (c_final_val / c_denom_2_part_val) * (D_jp_til_part_val - D_jq_til_part_val)
+
         ranks = np.zeros(n)
         for i in range(1, n+1):
             ranks[i-1] = rank(i) + rank_til(i)
         return ranks
+
+    
 
 
     # incorrect because it's symmetric
