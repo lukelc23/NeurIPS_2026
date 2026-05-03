@@ -1,0 +1,109 @@
+\section{Step-by-step comparison: \texttt{calc\_rank\_analytic} vs.\ LaTeX}
+
+\renewcommand{\arraystretch}{1.7}
+\setlength{\tabcolsep}{6pt}
+
+\noindent\begin{tabular}{|>{\raggedright\arraybackslash}p{0.47\linewidth}|>{\raggedright\arraybackslash}p{0.47\linewidth}|}
+\hline
+\textbf{Python (\texttt{calc\_rank\_analytic})} & \textbf{Existing LaTeX} \\
+\hline
+
+\textbf{Step 1. Base rank \texttt{rank(i)}}
+\[
+\tilde r_i \;=\; \frac{\sinh\!\left(\left(\frac{n+1}{2}-i\right)\lambda\right)}{\sinh\!\left(\frac{n+1}{2}\lambda\right) - \sinh\!\left(\frac{n-1}{2}\lambda\right)}
+\]
+&
+\textbf{Line 34}
+\[
+\tilde r_i(\alpha) \;=\; \frac{\sinh\!\left(\left(\frac{n+1}{2}-i\right)\lambda(\alpha)\right)}{\sinh\!\left(\frac{n+1}{2}\lambda(\alpha)\right) - \sinh\!\left(\frac{n-1}{2}\lambda(\alpha)\right)}
+\]
+Match: identical. \\
+\hline
+
+\textbf{Step 2. $c$ numerator \texttt{c\_final()}}
+\[
+c_{\text{final}} \;=\; \frac{\sinh\!\left(\frac{n+1}{2}\lambda\right) - \sinh\!\left(\frac{n-1}{2}\lambda\right) - \sinh\!\left(\left(\frac{n+1}{2}-p\right)\lambda\right) + \sinh\!\left(\left(\frac{n+1}{2}-q\right)\lambda\right)}{\sinh\!\left(\frac{n+1}{2}\lambda\right) - \sinh\!\left(\frac{n-1}{2}\lambda\right)}
+\]
+&
+\textbf{Lines 60--64}
+\[
+c_{\text{num}} \;=\; 1 + \frac{\sinh\!\left(\left(\frac{n+1}{2}-q\right)\lambda\right) - \sinh\!\left(\left(\frac{n+1}{2}-p\right)\lambda\right)}{\sinh\!\left(\frac{n+1}{2}\lambda\right) - \sinh\!\left(\frac{n-1}{2}\lambda\right)} \;=\; c_{\text{final}}
+\]
+Match: identical (Python writes over a common denominator). \\
+\hline
+
+\textbf{Step 3. $D_{\mathrm{sim}}$ \texttt{D\_sim()}}
+\begin{align*}
+D_{\mathrm{sim}} \;=\;& \cosh\!\left(\!\left(q-\tfrac12\right)\!\lambda\right)\sinh\!\left(\!\left(n-\tfrac{p+q}{2}+\tfrac12\right)\!\lambda\right) \\
+&{}+\cosh\!\left(\!\left(n-p+\tfrac12\right)\!\lambda\right)\sinh\!\left(\!\left(\tfrac{p+q}{2}-\tfrac12\right)\!\lambda\right)
+\end{align*}
+&
+\textbf{Lines 58--59}
+\begin{align*}
+D_{\mathrm{sim}} \;=\;& \cosh\!\left(\!\left(q-\tfrac12\right)\!\lambda\right)\sinh\!\left(\!\left(n-\tfrac{p+q}{2}+\tfrac12\right)\!\lambda\right) \\
+&{}+\cosh\!\left(\!\left(n-p+\tfrac12\right)\!\lambda\right)\sinh\!\left(\!\left(\tfrac{p+q}{2}-\tfrac12\right)\!\lambda\right)
+\end{align*}
+Match: identical. \\
+\hline
+
+\textbf{Step 4. $\tilde D_{ij,\text{part}}$ \texttt{D\_ij\_til\_part(i,j)}}
+\[
+\tilde D_{ij,\text{part}} \;=\; \cosh\!\left(\!\left(i\wedge j - \tfrac12\right)\!\lambda\right)\cosh\!\left(\!\left(n-\left(i\vee j - \tfrac12\right)\right)\!\lambda\right)
+\]
+&
+\textbf{Line 50}
+\[
+\tilde D_{ij,\text{part}} \;=\; \cosh\!\left(\!\left(i\wedge j - \tfrac12\right)\!\lambda\right)\cosh\!\left(\!\left(n-\left(i\vee j - \tfrac12\right)\right)\!\lambda\right)
+\]
+Match: identical. \\
+\hline
+
+\textbf{Step 5. $c$ denominator \texttt{c\_denom\_2\_part()}}
+\[
+c_{\text{denom2part}} \;=\; \sinh(\lambda)\sinh(\lambda n) \;-\; 2\sinh\!\left(\tfrac{q-p}{2}\lambda\right)D_{\mathrm{sim}}
+\]
+&
+\textbf{Line 57}
+\[
+c_{\text{denom2part}} \;=\; \sinh(\lambda)\sinh(\lambda n) \;-\; 2\sinh\!\left(\tfrac{n-p}{2}\lambda\right)D_{\mathrm{sim}}
+\]
+{\small \textbf{(Typo in LaTeX: $n-p$ vs.\ $q-p$; Python uses $q-p$, which is the correct form.)}} \\
+\hline
+
+\textbf{Step 6. Correction term \texttt{rank\_til(j)}}
+\[
+\text{corr}(j) \;=\; \frac{c_{\text{final}}}{c_{\text{denom2part}}}\,\bigl(\tilde D_{jp,\text{part}} - \tilde D_{jq,\text{part}}\bigr)
+\]
+Order of the difference: $\tilde D_{jp}-\tilde D_{jq}$.
+&
+\textbf{Line 86}
+\[
+r_j - \tilde r_j \;=\; \frac{c_{\text{final}}}{c_{\text{denom2part}}}\,\bigl(\tilde D_{jq,\text{part}} - \tilde D_{jp,\text{part}}\bigr)
+\]
+Order of the difference: $\tilde D_{jq}-\tilde D_{jp}$.\\
+{\small \textbf{This is the sign discrepancy}: the two expressions differ by a factor of $-1$.} \\
+\hline
+
+\textbf{Step 7. Final assembly}
+\[
+r_j \;=\; \underbrace{\tilde r_j}_{\texttt{rank(i)}} \;+\; \underbrace{\text{corr}(j)}_{\texttt{rank\_til(i)}}
+\]
+\[
+\;=\; \tilde r_j + \frac{c_{\text{final}}}{c_{\text{denom2part}}}\bigl(\tilde D_{jp,\text{part}} - \tilde D_{jq,\text{part}}\bigr)
+\]
+&
+\textbf{Line 86}
+\[
+r_j \;=\; \tilde r_j + \frac{c_{\text{final}}}{c_{\text{denom2part}}}\bigl(\tilde D_{jq,\text{part}} - \tilde D_{jp,\text{part}}\bigr)
+\]
+Same assembly, opposite sign on the correction.\\
+\hline
+
+\end{tabular}
+
+\bigskip
+\noindent\textbf{Summary of discrepancies found:}
+\begin{enumerate}
+\item \textbf{Step 5 (LaTeX line 57):} the LaTeX writes $\sinh\!\left(\tfrac{n-p}{2}\lambda\right)$ where it should be $\sinh\!\left(\tfrac{q-p}{2}\lambda\right)$. The Python code uses $\tfrac{q-p}{2}$.
+\item \textbf{Step 6 (LaTeX line 86):} the LaTeX writes $\tilde D_{jq}-\tilde D_{jp}$; the Python writes $\tilde D_{jp}-\tilde D_{jq}$. These differ by a sign. Empirically the Python sign is the one that matches the numerical ground truth (solved linear system) in the parameter regime where this closed-form agrees at all (i.e., $p>q$).
+\end{enumerate}

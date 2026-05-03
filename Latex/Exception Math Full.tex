@@ -1,0 +1,96 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{enumerate}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
+
+
+\geometry{margin=1in}
+
+\title{Transitive Inference with Exceptions}
+\author{Luke Cheng}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Section 1: Derivation}
+
+\subsection*{Notes to remember}
+\begin{itemize}
+    \item Sam's original transitivity breaking document and before changing it in his paper had $f(x_j, x_k) = r_k - r_j$, where $$r_j = \alpha' (b_{j-1} - b_j + \bar{h}(\delta_{jq} - \delta_{jp})) $$ and the margin was negative.  This produces $D_{jp} - D_{jq}$. By reversing that definition so $f(x_j, x_k) = r_j - r_k$, we now have $$r_j = \alpha' (b_{j} - b_{j-1} + \bar{h}(\delta_{jp} - \delta_{jq})). $$ This produces $D_{jq} - D_{jp}$. 
+\end{itemize}
+
+\subsection*{Rank Representation}
+
+$\tilde{r}_i(\alpha) = \frac{\sinh\left( \left( \frac{n+1}{2} - i \right) \lambda(\alpha) \right)}{\sinh\left( \left( \frac{n+1}{2} \right) \lambda(\alpha) \right) - \sinh\left( \left( \frac{n-1}{2} \right) \lambda(\alpha) \right)}$
+
+\begin{align*} 
+\text{Given:} \quad & \text{Dual formulation} \implies y = Ka \quad \text{where} \quad y = f(i, j) = r(i) - r(j)\\
+\text{Expression Definitions:}
+\quad & f(i,j) = \alpha' (b_i - b_{i-1} + b_{j-1} - b_j) + c\alpha'(\delta_{ip} + \delta_{jq} - \delta_{jp} - \delta_{iq}) \\ & = r_i - r_j\\
+& = \tilde{r}_i = \frac{\sinh\left(\left(\frac{n+1}{2} - i\right)\lambda(\alpha)\right)}{\sinh\left(\frac{n+1}{2}\lambda(\alpha)\right) - \sinh\left(\frac{n-1}{2}\lambda(\alpha)\right)}\\
+& r_i = \alpha' (b_i - b_{i-1} + c(\delta_{ip} - \delta_{iq}))\\
+&  \alpha' (b_i - b_{i-1}) =  \tilde{r}_i + c \alpha' (D_{ip} - D_{iq})\\ 
+& D_{ij} = 
+\begin{cases} 
+\text{if } i=j: & -1 + 2 \left(\frac{\cosh\left((i\land j - \frac{1}{2})\lambda\right)\cosh\left(\left(n-(i\lor j - \frac{1}{2})\right)\lambda\right)\tanh\left(\frac{\lambda}{2}\right)}{\sinh(\lambda n)}\right) \\
+\text{if } i \neq j: & 2 \left(\frac{\cosh\left((i\land j - \frac{1}{2})\lambda\right)\cosh\left(\left(n-(i\lor j - \frac{1}{2})\right)\lambda\right)\tanh\left(\frac{\lambda}{2}\right)}{\sinh(\lambda n)}\right)
+\end{cases} \\
+& \tilde{D}_{ij} = 2 \left(\frac{\cosh\left((i\land j - \frac{1}{2})\lambda\right)\cosh\left(\left(n-(i\lor j - \frac{1}{2})\right)\lambda\right)\tanh\left(\frac{\lambda}{2}\right)}{\sinh(\lambda n)} \right) \\
+& \tilde{D}_{ij constant} = 2 \left(\frac{tanh(\frac{\lambda}{2})}{sinh(\lambda n)}\right) \\
+& \tilde{D}_{ijpart} = \cosh\left((i\land j - \frac{1} {2})\lambda\right)\cosh\left(\left(n-(i\lor j - \frac{1}{2})\right)\lambda\right)
+& \\
+& c = \frac{
+1 + \left( \frac{\sinh\left(\left(\frac{n + 1}{2} - q\right) \lambda \right) - \sinh\left(\left(\frac{n + 1}{2} - p\right) \lambda \right)}{\sinh\left(\frac{n + 1}{2} \lambda \right) - \sinh\left(\frac{n - 1}{2} \lambda \right)} \right)
+}{1 - 2\alpha' - 4\alpha' \left( \frac{\tanh\left(\frac{\lambda}{2}\right)}{\sinh(\lambda n)} \right) \sinh\left(\frac{q-p}{2} \lambda\right) D_{sim} }  \\
+& c_{\text{denom2}} = c_{\text{denom2constant}} * c_{\text{denom2part}} \\
+&= 2 \alpha' \frac{tanh(\frac{\lambda}{2})}{sinh(\lambda n)} 
+* \left(sinh(\lambda) sinh(\lambda n) - 2sinh(\frac{n-p}{2} \lambda) D_{sim}\right)\\
+D_{\text{sim}} & = \left( \cosh\left(\left(q - \frac{1}{2}\right) \lambda\right) \sinh\left(\left(n - \frac{p + q}{2} + \frac{1}{2}\right) \lambda\right) \right. \\ 
+& + \cosh\left(\left(n - p + \frac{1}{2}\right) \lambda\right) \sinh\left(\left(\frac{p + q}{2} - \frac{1}{2}\right) \lambda\right) \\ \\
+c_{\text{num}} &= 
+1 + \left( \frac{\sinh\left(\left(\frac{n + 1}{2} - q\right) \lambda \right) - \sinh\left(\left(\frac{n + 1}{2} - p\right) \lambda \right)}{\sinh\left(\frac{n + 1}{2} \lambda \right) - \sinh\left(\frac{n - 1}{2} \lambda \right)} \right) \\
+& = \frac{c_{\text{numfinal}}}{c_\text{numpart}} = c_{\text{final}}\\
+& = \frac{\left( \sinh\left(\frac{n+1}{2} \lambda \right) - \sinh\left(\frac{n-1}{2} \lambda \right) - \sinh\left(\left(\frac{n+1}{2} - p\right)\lambda\right) + \sinh\left(\left(\frac{n+1}{2} - q\right)\lambda\right) \right)}{
+\left( \sinh\left(\frac{n+1}{2} \lambda\right) - \sinh\left(\frac{n-1}{2} \lambda\right) \right)}
+\\
+\\
+\text{Simplify:}  \quad & \delta \text{ cancels with the case of } D_{ij} \text{ when i = j} \\
+\quad & c \text{ simplifies with trig identity of } \tanh\left(\frac{x}{2}\right) = \frac{1-\cosh(x)}{\sinh(x)}  \\
+\quad & \alpha' {D}_{\text{ijconstant}} \text{ cancels with } c_{\text{denom2constant}} \\ \\
+\\
+\end{align*}f
+\newpage
+\begin{align*}
+\text{Final: } \quad
+& r_j := \alpha' (b_{j-1} - b_{j} + c(\delta_{jq} - \delta_{jp})) \\
+& r_j = \tilde{r}_j + c \alpha' (\tilde{D}_{jq} - \tilde{D}_{jp}) \\
+& r_j = \tilde{r}_j
++ c_{\text{final}} \left(\frac{\alpha'}{c_{denomconstant} * c_{denom2part}}\right) \left(D_{ijconstant}\right)\left(\tilde{D}_{jp} - \tilde{D}_{jq}\right)_{part} \\
+& r_j = \tilde{r}_j \\
+&+ \frac{
+\left( \sinh\left(\frac{n+1}{2} \lambda \right) - \sinh\left(\frac{n-1}{2} \lambda \right) - \sinh\left(\left(\frac{n+1}{2} - p\right)\lambda\right) + \sinh\left(\left(\frac{n+1}{2} - q\right)\lambda\right) \right) \left(\tilde{D}_{jq} - \tilde{D}_{jp}\right)_{part}
+}{
+\left( \sinh\left(\frac{n+1}{2} \lambda\right) - \sinh\left(\frac{n-1}{2} \lambda\right) \right) \left(\sinh(\lambda)\sinh(\lambda n) - 2\sinh\left(\frac{q-p}{2} \lambda \right) D_{\text{sim}} \right)
+} \\
+& r_j = \tilde{r}_j + c_{\text{final}} \frac{\left(\tilde{D}_{jq} - \tilde{D}_{jp}\right)_{part} }{ \left(\sinh(\lambda)\sinh(\lambda n) - 2\sinh\left(\frac{q-p}{2} \lambda \right) D_{\text{sim}} \right) } \\
+& r_j = \tilde{r}_j +  \left(\frac{c_{\text{final}}}{c_{denom2part} }\right) \left(\tilde{D}_{jq} - \tilde{D}_{jp}\right)_{part}\\
+\end{align*}
+
+\subsection{Simulation}
+\begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{r_diff_simulation.png}
+        \caption{simulation from sympy TI trends proof}
+        \label{fig:enter-label}
+\end{figure}
+\end{document}
