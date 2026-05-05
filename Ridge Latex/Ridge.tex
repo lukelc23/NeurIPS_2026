@@ -1,0 +1,596 @@
+\documentclass{article}
+\usepackage{neurips_2026}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+%[TODO]double check that you can use these!!!
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{layout}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\usepackage{comment}
+
+\title{Supplement to: A mathematical theory of relational generalization\\and memorization}
+
+\author{%
+  Luke Cheng\thanks{Use footnote for providing further information
+    about author (webpage, alternative address)---\emph{not} for acknowledging
+    funding agencies.} \\
+  Department of Computer Science\\
+  Cranberry-Lemon University\\
+  Pittsburgh, PA 15213 \\
+  \texttt{hippo@cs.cranberry-lemon.edu}
+  }
+
+\begin{document}
+
+
+\maketitle
+
+\subsection{Standard statistical learning models have a transitive inductive bias}
+\label{app:transitive_inductive_bias}
+In this section, we derive the TI behavior of different standard statistical learning models. Section~\ref{app:ti_setup} describes the general setup of transitive inference and our learning models. Section~\ref{app:ti_intuition} then provides a general intuition for why these models implement an emergent ranking system and how we can compute these ranks. The subsequent sections go on to characterize model behavior for ridge regression (Section~\ref{app:ti_ridge}) and gradient flow (Section~\ref{app:ti_gradient_flow}).
+
+\subsubsection{Setup}
+\label{app:ti_setup}
+We consider $n\in\mathbb{N}$ items $(x^{(i)})_{i=1,\dotsc,n}$, $x^{(i)}\in\mathbb{R}^d$. The task presents two of those items together and we denote this by
+\begin{equation}
+    x^{(i,j)}=\begin{pmatrix}x^{(i)}\\x^{(j)}\end{pmatrix}\in\mathbb{R}^{2d}.
+\end{equation}
+The corresponding label is given by
+\begin{equation}
+    y^{(i,j)}=\begin{cases}1&\text{if }i<j,\\-1&\text{else,}\end{cases}
+\end{equation}
+and the training dataset consists of all adjacent items, i.e.\
+\begin{equation}
+    \mathcal{D}=\left\{\bigl(x^{(i,i+1)},1\bigr)\,\middle|\,i=1,\dotsc,n-1\right\}\cup\left\{\bigl(x^{(i+1,i)},-1\bigr)\,\middle|\,i=1,\dotsc,n-1\right\}.
+\end{equation}
+In matrix form, we denote this dataset as
+\begin{equation}
+    X=\begin{pmatrix}x^{(1,2)}\\\vdots\\x^{(n-1,n)}\\x^{(2,1)}\\\vdots\\x^{(n,n-1)}\end{pmatrix}\in\mathbb{R}^{2(n-1)\times 2d},\quad
+    y=\begin{pmatrix}y^{(1,2)}\\\vdots\\y^{(n-1,n)}\\y^{(2,1)}\\\vdots\\y^{(n,n-1)}\end{pmatrix}\in\mathbb{R}^{2(n-1)}.
+\end{equation}
+We consider a set of features
+\begin{equation}
+    \phi:\mathbb{R}^{2d}\to\mathbb{R}^h,\quad h\in\mathbb{N},
+\end{equation}
+and a linear model of those latent features that predicts the output, i.e.\
+\begin{equation}
+    \hat{y}^{(i,j)}=\langle w,\phi(x^{(i,j)})\rangle.
+\end{equation}
+
+\subsubsection{General intuition}
+\label{app:ti_intuition}
+Many standard statistical learning models (in particular the ones we consider below) only depend on their input representation through its trial-by-trial similarity (or induced kernel, see also Section~\ref{app:induced_kernel} %TODO: fix ref to S1.B
+, \cite{TODO_ref7}):
+\begin{equation}
+    K(x,x')=\langle\phi(x),\phi(x')\rangle.
+\end{equation}
+In particular, the minimal norm solution (described in Section~\ref{app:norm_minimization} %TODO: ref to "Norm minimization and partly conjunctive representations yield transitive generalization"
+) can be described in terms of the ``dual coefficients''
+\begin{equation}
+    a=K^{-1}y,
+    \label{eq:dual}
+\end{equation}
+where $K$ is the trial-by-trial similarity of the training dataset:
+\begin{equation}
+    K=\phi(X)^T\phi(X)\in\mathbb{R}^{2(n-1)\times 2(n-1)}.
+\end{equation}
+Each dual coefficient corresponds to a particular training data point $(i,j)$ and we denote it by $a_{(i,j)}$. The model behavior on a new data point $x^{(i,j)}$ is then given by
+\begin{equation}
+    f(x^{(i,j)})=\langle k_{(i,j)}^{(\text{test})},a\rangle,\quad k_{(i,j)}^{(\text{test})}:=\phi(X)^T\phi(x^{(i,j)}).
+\end{equation}
+Importantly, the similarity between test data points and training data points can only take on two possible values: $\kappa_o$ and $\kappa_d$. Specifically, the dual coefficients $a_{(i,i+1)}$, $a_{(i,i-1)}$, $a_{(j-1,j)}$, and $a_{(j+1,j)}$ are overlapping with the test input $(i,j)$ and therefore have similarity $\kappa_o$. (Note that if $i,j\in\{1,n\}$, some of these dual coefficients will not exist. To handle these special cases, we simply set the corresponding dual coefficients to zero. For example, if $i=0$, $a_{(i,i-1)}=a_{(1,0)}$ corresponds to a non-existent data point and is set to zero.) All other data points have similarity $\kappa_d$. Taken together, we can express model behavior as
+\begin{equation}
+    f(x^{(i,j)})=\kappa_d\sum a+(\kappa_o-\kappa_d)\bigl(a_{(i,i+1)}+a_{(i,i-1)}+a_{(j-1,j)}+a_{(j+1,j)}\bigr).
+\end{equation}
+Crucially, this behavior is a sum of values dependent on $i$ and values dependent on $j$---just like we observed for a purely additive representation. This immediately implies that the model implements a ranking system. Specifically, we define
+\begin{equation}
+    r_1(i)=(\kappa_o-\kappa_d)\bigl(a_{(i,i+1)}+a_{(i,i-1)}\bigr),\quad r_2(j)=-(\kappa_o-\kappa_d)\bigl(a_{(j-1,j)}+a_{(j+1,j)}\bigr),
+\end{equation}
+yielding
+\begin{equation}
+    f(x^{(i,j)})=r_1(i)-r_2(j).
+\end{equation}
+To see whether the model generalizes, we need to determine whether the ranks are ordered correctly. To do so, we analytically solve the inverse problem Eq.~\eqref{eq:dual}. This is described in detail in the next section, which considers a generalization of the problem considered here. As a brief summary, we rely on previous results on inverses for banded diagonal matrices~\cite{TODO_ref8} to compute the inverse matrix. This inverse is expressed in terms of hyperbolic functions. We then use hyperbolic identities in a few different ways to compute $a$ and, finally, $r_1$ and $r_2$ from this. This reveals that $r_1(i)=r_2(i)$ and further gives rise to the analytical expression provided in the main text.
+
+\subsubsection*{S1.D.3. Ridge regression.}
+Here we assume that the weights are learned through ridge regression. Specifically, our loss function is given by the mean squared error over the training set:
+\begin{align}
+L(w)
+&= \sum_{(x,y)\in \mathcal{D}} \ell\!\bigl(y, \langle w, \phi(x)\rangle\bigr) \nonumber \\
+&= \sum_{i=1}^{n-1} \ell\!\left(1, \bigl\langle w, \phi(x^{(i,i+1)})\bigr\rangle\right)
+ + \sum_{i=1}^{n-1} \ell\!\left(-1, \bigl\langle w, \phi(x^{(i+1,i)})\bigr\rangle\right) \nonumber \\
+&\quad + \ell\!\left(1, \bigl\langle w, \phi(x^{(p,q)})\bigr\rangle\right)
+      + \ell\!\left(-1, \bigl\langle w, \phi(x^{(q,p)})\bigr\rangle\right).
+\tag{S47}
+\end{align}
+where $\ell(y,\hat y) = (y - \hat y)^2$. The weights $w$ are then determined by minimizing the optimization problem
+\begin{equation}
+L(w) + \tfrac{1}{c}\|w\|_2^2,
+\tag{S48}
+\end{equation}
+where $c$ is the inverse strength of the regularization. The corresponding dual problem is given by
+\begin{equation}
+a := \bigl(K + \tfrac{1}{c} I \bigr)^{-1} y,
+\tag{S49}
+\end{equation}
+where $K$ is the cross-sample similarity,
+\begin{equation}
+K \in \mathbb{R}^{(2n)^2}, 
+\quad K_{ij} = \phi(X)^T \phi(X) = 
+\begin{cases}
+\kappa_s & \text{if } i = j\\
+\kappa_o & \text{if } |i-j|\in\{n-1, n+1\} \\
+\kappa_o & \text{if } i \in \{p,q\}, \quad i+1 \in \{p+1,q+1\}\\
+\kappa_d & \text{else}.
+\end{cases}
+\tag{S50}
+\end{equation}
+
+Note that for $\tfrac{1}{c} = 0$, we obtain the special case from the previous section (Eq.~(S41)). Writing $a$ as
+\begin{equation}
+a = \begin{pmatrix} b^{(1)} \\ b^{(2)} \\ q^{(1)} \\ q^{(2)} \end{pmatrix}, 
+\quad b^{(1)} \in \mathbb{R}^{n-1}, \; b^{(2)} \in \mathbb{R}^{n-1}, q^{(1)} \in \mathbb{R}, q^{(2)} \in \mathbb{R}
+\tag{S51}
+\end{equation}
+we can write $(K + \tfrac{1}{c}I)^{-1} a = y$ as
+\begin{align}
+(\delta_s + \tfrac{1}{c}) b^{(1)}_i 
++ \delta_o\bigl(b^{(2)}_{i-1} + b^{(2)}_{i+1}\bigr)
++ \delta_o\bigl(h^{(1)}(\delta_{(i=p)} + \delta_{(i+1 = q)}) \bigr)
++ \delta_o\bigl(h^{(2)}(\delta_{(i=q)} + \delta_{(i+1 = p)}) \bigr) 
++ \kappa_d \langle a \rangle &= 1,
+\nonumber\\
+(\delta_s + \tfrac{1}{c}) b^{(2)}_i 
++ \delta_o\bigl(b^{(1)}_{i-1} + b^{(1)}_{i+1}\bigr)
++ \delta_o\bigl(h^{(2)}(\delta_{(i=p)} + \delta_{(i+1 = q)}) \bigr) 
++ \delta_o\bigl(h^{(1)}(\delta_{(i=q)} + \delta_{(i+1 = p)}) \bigr) 
++ \kappa_d \langle a \rangle &= -1, 
+\nonumber\\
+(\delta_s + \tfrac{1}{c}) h^{(1)} 
++ \delta_o\bigl(b^{(1)}_{q-1} + b^{(1)}_p\bigr) 
++ \delta_o\bigl(b^{(2)}_{q} + b^{(2)}_{p-1}\bigr) 
++ \kappa_d \langle a \rangle &= 1, 
+\nonumber\\
+(\delta_s + \tfrac{1}{c}) h^{(2)} 
++ \delta_o\bigl(b^{(2)}_{q-1} + b^{(2)}_p\bigr) 
++ \delta_o\bigl(b^{(1)}_{q} + b^{(1)}_{p-1}\bigr) 
++ \kappa_d \langle a \rangle &= -1, 
+\nonumber\\
+\tag{S52}
+\end{align}
+\tag{S52}
+where we define $\delta_s = \kappa_s - \kappa_d$, $\delta_o = \kappa_o - \kappa_d$, 
+$\langle a \rangle := \sum_{i=1}^{2n} a_i$, and for notational simplicity, $b^{(j)}_0 = b^{(j)}_n = 0$. This means that if $b^{(1)},b^{(2)},h^{(1)},h^{(2)}$ are a solution to the equation, then so are
+\begin{equation}
+\tilde b^{(1)} := -b^{(2)}, 
+\quad \tilde b^{(2)} := -b^{(1)},
+\qquad \tilde h^{(2)} := -h^{(1)},
+\quad \tilde h^{(2)} := -h^{(1)}.
+\tag{S53}
+\end{equation}
+Since (S49) is well-defined, the solution $b$ must be unique and we can infer
+\begin{equation}
+b^{(1)} = -b^{(2)}, \qquad h^{(1)} = -h^{(2)}.
+\tag{S54}
+\end{equation}
+
+We thus define
+\begin{equation}
+\bar b := b^{(1)} = -b^{(2)}, 
+\qquad h := h^{(1)} = -h^{(2)},
+\tag{S55}
+\end{equation}
+
+Setting
+\begin{equation}
+\tilde c := c \delta_s,
+\tag{S56}
+\end{equation}
+(S52) yields
+
+\begin{align}
+\delta_s(1 + \tilde{c}^{-1}) \bar{b}_i 
+- \delta_o\bigl(\bar{b}_{i-1} + \bar{b}_{i+1}\bigr)
++ \delta_o\bigl(\bar{h}(\delta_{(i=p)} + \delta_{(i+1 = q)}) \bigr)
+- \delta_o\bigl(\bar{h}(\delta_{(i=q)} + \delta_{(i+1 = p)}) \bigr) &= 1
+\nonumber \\
+\delta_s(1 + \tilde{c}^{-1}) \bar{h} 
++ \delta_o\bigl(\bar{b}_{q-1} + \bar{b}_p\bigr) 
+- \delta_o\bigl(\bar{b}_{q} + \bar{b}_{p-1}\bigr) 
+&= 1, 
+\tag{S57}
+\end{align}
+as $\langle a \rangle = \langle a^{(1)} \rangle + \langle a^{(2)} \rangle = 0$ and therefore the last summand vanishes. 
+
+As $\tfrac{\delta_o}{\delta_s} = \tfrac{1-\alpha}{2}$, setting $\bar{b}$ in matrix form results in the following.  Note we denote $e_{i=j}$ as a one hot vector for the element for which i=j and 0s otherwise.
+
+\begin{align}& 
+\delta_s(\tilde{K} + \tilde{c}^{-1} I)\bar{b} + \delta_o \bar{h} (e_{(i=p)} + e_{(i+1 = q)} - e_{(i = q)} - e_{(i+1=p)} ) ] = 1 \nonumber \\
+& \implies \delta_s 
+(B\bar{b}) = 1 - \delta_o \bar{h} (e_{(i=p)} + e_{(i+1 = q)} - e_{(i = q)} - e_{(i+1=p)} ) )
+\nonumber \\
+&\implies
+\bar{b} = (\delta_s B)^{-1} (1 - \delta_o \bar{h} (e_{(i=p)} + e_{(i+1 = q)} - e_{(i = q)} - e_{(i+1=p)} ) ) \nonumber \\ 
+&\implies 
+\bar{b} = \bar{\tilde{b}} - \alpha' B^{-1} \bar{h} (e_{(i=p)} + e_{(i+1 = q)} - e_{(i = q)} - e_{(i+1=p)} ) ) \nonumber \\
+& \implies \bar{b} = \bar{\tilde{b}} - \alpha' \bar{h} (B^{-1}_{ip} + B^{-1}_{(i+1)q} - B^{-1}_{iq} - B^{-1}_{(i+1)p})
+\tag{S59}
+\end{align}
+
+where 
+
+\[\qquad
+\tilde{K} \in \mathbb{R}^{(n-1)\times(n-1)},\qquad
+\tilde{K}_{ij} =
+\begin{cases}
+1, & \text{if } i=j,\\[4pt]
+-\dfrac{1-\alpha}{2}, & \text{if } |i-j|=1,\\[6pt]
+0, & \text{else.}
+\end{cases}
+\tag{S60}
+\]
+and 
+$ B := \tilde{K} + \tilde{c}\,I $.
+
+The matrix $B$ is tridiagonal with diagonal entries \(1+\tilde{c}\) and
+off–diagonal entries \(-\frac{1-\alpha}{2}\). 
+The ratio between the diagonal and off–diagonal terms is therefore
+\[
+-\,2\,\frac{1+\tilde{c}^{-1}}{1-\alpha}\;\le\;-2.
+\tag{S70}
+\]
+
+As this ratio is smaller than \(-2\), we can apply Theorem S4.1 to infer
+\begin{equation}
+B^{-1}_{ij}
+=
+\frac{
+\cosh\!\bigl((n-|j-i|)\,\lambda\bigr)
+-
+\cosh\!\bigl((n-i-j)\,\lambda\bigr)
+}{
+(1-\alpha)\,\sinh(\lambda)\,\sinh(n\lambda)
+},
+\qquad
+\lambda := \operatorname{arccosh}\!\left(\frac{1+\tilde{c}^{-1}}{1-\alpha}\right).
+\tag{S71}
+\end{equation}
+We then use this to compute $\delta_s \bar{\tilde{b}} = B^{-1}\mathbf{1}$, where $\bar{\tilde{b}}$ is the previously computed rank without the exception, derived in (Lippl, 2024). \\
+
+
+Thus the dual coefficients are:
+
+\begin{align}
+\bar{b} &= \tilde{\tilde{b}}_i - \alpha' \bar{h}(\tilde{B}_{ip} + \tilde{B}_{i(q-1)} - \tilde{B}_{iq} +\tilde{B}_{i(p-1)})) \nonumber \\
+\bar{h} &= \tfrac{1}{ \delta_s (1 + \tilde{c}^{-1}) } \bigl( 1 - \delta_o (\bar{b}_p + \bar{b}_{q-1} - \bar{b}_q - \bar{b}_{p-1}) \bigr)
+\tag{S59}
+\end{align}
+where $\tilde{\tilde{b}}_i = \tilde{b}_i = a_i$ but with $ \lambda = \text{arccosh}(\tfrac{1+\tilde{c}^{-1}}{1-\alpha})$ as the corrective factor for regularization.
+\bigskip
+
+The predictions of the fitted model can be expressed in terms of the dual coefficients by
+\begin{equation}
+f\!\left(x^{(j,k)}\right) 
+= \sum_{(x,y)\in\mathcal{D}} a_x K(x, x^{(j,k)})
+= \sum_{i=1}^{n-1} K(i,i+1; j,k)\, b_i^{(1)} + \sum_{i=1}^{n-1} K(i+1,i; j,k)\, b_i^{(2)} + K(p,q;j,k)h^{(1)} + K(q,p;j,k){h^{(2)}}.
+\tag{S61}
+\end{equation}
+
+We can express this in terms of $\bar{b}$ and $\bar{h}$ as
+\begin{equation}
+f\!\left(x^{(j,k)}\right) 
+= \sum_{i=1}^{n-1} K(i,i+1; j,k)\, b_i^{(1)} - \sum_{i=1}^{n-1} K(i+1,i; j,k) \, b_i^{(2)} + K(p,q;j,k)h^{(1)} - K(q,p;j,k){h^{(2)}}.
+\tag{S62}
+\end{equation}
+
+There are now two different cases: either $x^{(j,k)}$ is in the training data or not.
+
+\bigskip
+
+\textbf{Case 1: Test data.} \quad 
+If $x^{(j,k)}$ is not in the training data, all data points are either overlapping or distinct. 
+In the first data point, a data point is overlapping if $i=j$ or $i=k-1$ and therefore
+\begin{equation}
+\sum_{i=1}^{n-1} K(i,i+1; j,k)\, b_i^{(1)} + K(p,q;j,k)h^{(1)} 
+= \kappa_d \langle \bar{a} \rangle + \delta_o(\bar{b}_j + \bar{b}_{k-1}) + \delta_o \bar{h}(\delta_{(j = p)} + \delta_{(k = q)})
+\tag{S63}
+\end{equation}
+
+(Note that one of these dual coefficients, as in the previous section, may not exist, if $i \in \{1,n\}$. 
+To leave the expression simple, we define $\overline{a}_0 = \overline{a}_n = 0$, covering these cases as well.)
+Analogously, the second sum amounts to
+\begin{equation}
+\sum_{i=1}^{n-1} K(i+1,i; j,k) b_i^{(1)} + K(q,p;j,k)h^{(2)} 
+= \kappa_d \langle \bar{a} \rangle + \delta_o(\bar{b}_{(j-1)} + \bar{b}_k) + \delta_o \bar{h}(\delta_{(j = q)} + \delta_{(k = p)})
+\tag{S64}
+\end{equation}
+and overall, the model behavior is expressed as
+\begin{equation}
+f(x^{(j,k)}) 
+=  \delta_o \bigl(\bar{b}_j + \bar{b}_{k-1} - \bar{b}_{(j-1)} - \bar{b}_k\bigr) + \delta_o \bar{h} \bigl(\delta_{(j=p)} + \delta_{(k=q)} - \delta_{(j=q)} - \delta_{(k=p)}\bigr).
+\tag{S65}
+\end{equation}
+
+\bigskip
+
+\textbf{Case 2: Training data.} \quad 
+If $x^{(j,k)}$ is in the training data, then there are four cases.  Either $k=j+1$, $k=j-1$, $j=p \text{ and } k=q$ or $j=q \text{ and } k=p$.
+In the first case, the first sum has as one of its data points $(j,k)=(j,j+1)$ itself. The only overlapping data points are potentially with the exception training pairs, for which we use the $\delta(j = p or j = q)$ notation to describe if this overlapping term appears. 
+\begin{equation}
+\sum_{i=1}^{n-1} K(i,i+1; j,k = j+1)\, b_i^{(1)} + K(p,q;j,k=j+1)h^{(1)} 
+=  \kappa_d \langle a \rangle + \delta_s(\bar{b}_j) + \delta_o \bar{h}(\delta_{(j=p)} + \delta_{(k=q)}) 
+\tag{S66}
+\end{equation}
+Analogously the second sum is:
+\begin{equation}
+\sum_{i=1}^{n-1} K(i+1,i; j,k=j+1) \bar{b} + K(q,p;j,j,k=j+1) \bar{h} 
+= \kappa_d \langle \bar{a} \rangle + 
+\delta_o(\bar{b}_{j-1} + \bar{b}_{k}) + 
+\delta_o \bar{h}(\delta_{(j=q)} + \delta_{(k=p)}) 
+\tag{S66}
+\end{equation}
+and overall, the model behavior is expressed as
+\begin{equation}
+f(x^{(j,k)}) 
+= \delta_s(\bar{b}_j) - \delta_o(\bar{b}_{j-1} + \bar{b}_{k}) + \delta_o \bar{h}(\delta_{(j=p)} + \delta_{(k=q)} - \delta_{(j=q)} - \delta_{(k=p)}) 
+\tag{S66}
+\end{equation}
+The second case is analogous: 
+\begin{equation}
+f(x^{(j,k)}) 
+= - \delta_s(\bar{b}_k) + \delta_o(\bar{b}_{j} + \bar{b}_{k-1}) + \delta_o \bar{h}(\delta_{(j=p)} + \delta_{(k=q)} - \delta_{(j=q)} - \delta_{(k=p)}) 
+\tag{S66}
+\end{equation}
+The third case is analogous to the first case.  Note that the similar data point is the exception training pair.
+\begin{equation}
+f(x^{(j,k)}) 
+= \delta_s(\bar{h}) - \delta_o(\bar{b}_{p} + \bar{b}_{q-1} - \bar{b}_{p-1} + \bar{b}_{q})
+\tag{S66}
+\end{equation}
+The last case is analogous to the fourth case.  
+\begin{equation}
+f(x^{(j,k)}) 
+= - \delta_s(\bar{h}) + \delta_o(\bar{b}_{p} + \bar{b}_{q-1} - \bar{b}_{p-1} + \bar{b}_{q})
+\tag{S66}
+\end{equation}
+
+Taken together, the prediction made by $\bar{a}$ are expressed as
+\[
+f(x_j, x_k) =
+\begin{cases}
+\delta_s(\bar{b}_j) - \delta_o(\bar{b}_{j-1} + \bar{b}_{k}) + \delta_o \bar{h}(\delta_{(j=p)} + \delta_{(k=q)} - \delta_{(j=q)} - \delta_{(k=p)}), & \text{if } k = j+1, \\[6pt]
+- \delta_s(\bar{b}_k) + \delta_o(\bar{b}_{j} + \bar{b}_{k-1}) + \delta_o \bar{h}(\delta_{(j=p)} + \delta_{(k=q)} - \delta_{(j=q)} - \delta_{(k=p)}), & \text{if } k = j-1, \\[6pt]
+\delta_s(\bar{h}) - \delta_o(\bar{b}_{p} + \bar{b}_{q-1} - \bar{b}_{p-1} - \bar{b}_{q}), & \text{if } j=p \text{ and } k=q, \\
+- \delta_s(\bar{h}) + \delta_o(\bar{b}_{p} + \bar{b}_{q-1} - \bar{b}_{p-1} - \bar{b}_{q}), & \text{if } j=q \text{ and } k=p, \\
+\delta_o \bigl(\bar{b}_j + \bar{b}_{k-1} - \bar{b}_{(j-1)} - \bar{b}_k\bigr) + \delta_o \bar{h} \bigl(\delta_{(j=p)} + \delta_{(k=q)} - \delta_{(j=q)} - \delta_{(k=p)}\bigr), & \text{else} 
+\end{cases}
+\]
+
+This makes apparent the emergent rank representation for test cases:
+
+\begin{equation}
+r_j = \delta_o \bigl(\bar{b}_j - \bar{b}_{(j-1)} \bigr) + \delta_o \bar{h} \bigl(\delta_{(j=p)} - \delta_{(j=q)} \bigr).
+\tag{S67}
+\end{equation}
+
+Using the rank, can reformulate $\bar{h}$ as the following:
+
+\begin{align}
+    h = \frac{ \tilde{r_p} - \tilde{r_q} }
+    { \delta_s(1+\tilde{c}^{-1}) + (D_{pp} + D_{qq} - D_{qp} - D_{pq}) }
+    \tag{S68}
+\end{align}
+
+    where $ D_{ij} = \delta_o \Big( B_{(i-1)j}^{-1} + B_{i(j-1)}^{-1} - B_{ij}^{-1} - B_{(i-1)(j-1)}^{-1} \Big) $.
+
+Using hyperbolic–trigonometric identities, we can simplify these expressions
+further, resulting in the following lemma. \\
+\bigskip
+\textbf{Lemma S1.4} $\quad$ \textit{For non-adjacent items,}
+
+\begin{equation}
+    f(x_j,x_k) = r_j - r_k, \quad r_j = \\
+    \notag
+\end{equation}
+\textit{For adjacent items, }
+
+\begin{equation}
+    f(x_j,x_k) = m \cdot 1 + (1-m)(r_j - r_{j+1}) - m_{exp}(j)(\tilde{r}_p - \tilde{r}_{q}),
+    \notag
+\end{equation}
+
+\begin{equation}
+        \\ m = \frac{\alpha}{\alpha + \tilde{c}^{-1}} \qquad m_{exp} = 
+        \frac{(\delta_s \tilde{c}^{-1} \alpha')(B^{-1}_{jp} + B^{-1}_{jq} + B^{-1}_{j(p-1)} + B^{-1}_{jq})}{\delta_s (1 + \tilde{c}^{-1}) 
+     + (D_{pp} + D_{qq} - D_{pq} - D_{qp})}
+\end{equation}
+    
+
+
+\subsection*{Reference and derivations}
+
+\subsection*{Derivation 1: Full-rank form}
+
+We derive the prediction on adjacent training pairs in terms of the
+\emph{full} rank $r_j$, which already incorporates the exception correction.
+
+Starting from the case-split expression for $k = j+1$,
+\begin{equation}
+f(x_j, x_{j+1}) = \delta_s \bar{b}_j - \delta_o(\bar{b}_{j-1} + \bar{b}_{j+1})
++ \delta_o \bar{h}\bigl(\delta_{j=p} + \delta_{j+1=q} - \delta_{j=q} - \delta_{j+1=p}\bigr),
+\label{eq:fcase}
+\end{equation}
+we observe that the row-$j$ dual equation~\eqref{S57} reads
+\begin{equation}
+\delta_s(1 + \tilde{c}^{-1}) \bar{b}_j - \delta_o(\bar{b}_{j-1} + \bar{b}_{j+1})
++ \delta_o \bar{h}\bigl(\delta_{j=p} + \delta_{j+1=q} - \delta_{j=q} - \delta_{j+1=p}\bigr) = 1.
+\label{eq:dualrowj}
+\end{equation}
+Subtracting~\eqref{eq:dualrowj} from~\eqref{eq:fcase}, the off-diagonal $\bar{b}$ terms
+and the indicator terms cancel, yielding
+\begin{equation}
+f(x_j, x_{j+1}) = 1 - \delta_s \tilde{c}^{-1}\, \bar{b}_j.
+\label{eq:fbbar}
+\end{equation}
+
+Next, we express $\bar{b}_j$ in terms of the full rank. From the rank
+definition $r_j = \delta_o(\bar{b}_j - \bar{b}_{j-1}) + \delta_o \bar{h}(\delta_{j=p} - \delta_{j=q})$,
+\begin{equation}
+r_j - r_{j+1} = \delta_o(2\bar{b}_j - \bar{b}_{j-1} - \bar{b}_{j+1})
++ \delta_o \bar{h}\bigl(\delta_{j=p} - \delta_{j+1=p} - \delta_{j=q} + \delta_{j+1=q}\bigr).
+\end{equation}
+The indicator pattern matches~\eqref{eq:dualrowj} exactly. Substituting
+$\delta_o(\bar{b}_{j-1} + \bar{b}_{j+1})$ from the dual row,
+\begin{equation}
+r_j - r_{j+1} = 2\delta_o \bar{b}_j - \delta_s(1 + \tilde{c}^{-1})\bar{b}_j + 1.
+\end{equation}
+Using $2\delta_o = \delta_s(1-\alpha)$,
+\begin{equation}
+r_j - r_{j+1} = 1 - \delta_s\bigl(\alpha + \tilde{c}^{-1}\bigr)\bar{b}_j
+\quad\Longrightarrow\quad
+\delta_s \bar{b}_j = \frac{1 - (r_j - r_{j+1})}{\alpha + \tilde{c}^{-1}}.
+\label{eq:bbarinrank}
+\end{equation}
+Substituting~\eqref{eq:bbarinrank} into~\eqref{eq:fbbar},
+\begin{equation}
+f(x_j, x_{j+1}) = 1 - \frac{\tilde{c}^{-1}}{\alpha + \tilde{c}^{-1}}
+\bigl[1 - (r_j - r_{j+1})\bigr]
+= \frac{\alpha}{\alpha + \tilde{c}^{-1}} + \frac{\tilde{c}^{-1}}{\alpha + \tilde{c}^{-1}}(r_j - r_{j+1}).
+\end{equation}
+Defining $m := \alpha/(\alpha + \tilde{c}^{-1})$, so $1 - m = \tilde{c}^{-1}/(\alpha + \tilde{c}^{-1})$,
+\begin{equation}
+\boxed{\,f(x_j, x_{j+1}) = m \cdot 1 + (1-m)(r_j - r_{j+1}),\qquad
+m = \frac{\alpha}{\alpha + \tilde{c}^{-1}}.\,}
+\end{equation}
+The prediction is a ridge-weighted convex combination of the training target
+and the rank gap. The exception is hidden inside $r$.
+
+\subsubsection*{$\bar{h}$ reformulation}
+
+We reformulate $\bar{h}$ in terms of solely the normal TI rank and matrices, instead of the exception dual coefficients.
+
+\begin{align*}
+\bar{h} &= \left[ 1 - \delta_o \left( \bar{b}_{q-1} + \bar{b}_p - \bar{b}_q - \bar{b}_{p-1} \right) \right] 
+\underbrace{\left( \frac{1}{\delta_s (1 + \tilde{c}^{-1})} \right)}_{=\;\text{coeff}}
+= \frac{\tilde{r}_p - \tilde{r}_q}{\delta_s (1 + \tilde{c}^{-1}) 
+     + (D_{pp} + D_{qq} - D_{pq} - D_{qp})} \notag
+\end{align*}
+
+We begin with a few identities, starting with $f(j,k)$.  Denote $ \delta_{(i=j)}$ as $ \delta_{ij}$ in the following for brevity.
+
+\begin{align*}
+f(x_j, x_k)_{\text{test}} 
+  &= \delta_o \left( \bar{b}_j + \bar{b}_{k-1} - \bar{b}_{j-1} - \bar{b}_k \right) 
+     + \delta_o \, \bar{h} \, (\delta_{jp} + \delta_{jq} 
+     - \delta_{kp} - \delta_{kq}) \\
+  &= \delta_o (\bar{b}_j - \bar{b}_{j-1}) 
+     + \delta_o \bar{h} (\delta_{jp} - \delta_{jq}) 
+     - \delta_o (\bar{b}_k - \bar{b}_{k-1}) 
+     - \delta_o \bar{h} (\delta_{kp} - \delta_{kq}) \\
+  &= r_j - r_k \\
+  \end{align*}
+  
+where the rank is
+\begin{align}
+  r_j &:= \delta_o \left( b_i - b_{j-1} \right) + \bar{h} \, \delta_o \left( \delta_{jp} - \delta_{jq} \right) \tag{R1}.
+\end{align}
+
+This implies the following relationship between our current rank and the previous TI rank:
+
+\begin{align*}
+\tilde{r_j} &= \delta_o (\bar{\tilde{a}}_j - \bar{\tilde{a}}_{j-1}) 
+   \;\;\implies\;\; 
+   r_j = \tilde{r_j} + \delta_o \bar{h} (\delta_{jp} - \delta_{jq})
+\end{align*}
+
+By applying the constraint from the training data combined with the ranking system, we can reformulate $\bar{h}$ into simply the parameters from the regular TI without exceptions.  
+
+\begin{align*}
+\bar{h} &= \left[ 1 - \delta_o \left( \bar{b}_{q-1} + \bar{b}_p - \bar{b}_q - \bar{b}_{p-1} \right) \right] 
+\underbrace{\left( \frac{1}{\delta_s (1 + \tilde{c}^{-1})} \right)}_{=\;\text{coeff}}
+\end{align*}
+
+The first term reveals $\bar{h}$ as a function of the previous ranking system
+
+\begin{align}
+     1 - \delta_o \left( \bar{b}_{q-1} + \bar{b}_p - \bar{b}_q - \bar{b}_{p-1} \right) 
+     &=  1 - \left[ \delta_o ( \bar{b}_p - \bar{b}_{p-1} ) - \delta_o ( \bar{b}_q - \bar{b}_{q-1} ) \right] 
+\end{align}
+
+We can represent a linear combination of elements from $B^{-1}$ and our ranking formula to derive a simplified form.  We use the following:
+
+\begin{align}
+\bar{b}_j - \bar{b}_{j-1} 
+  &= \left( \bar{\tilde{b}}_{i-1} - \bar{\tilde{b}}_{i-1} \right) 
+  - \alpha' \bar{h} \left( B^{-1}_{ip} + B^{-1}_{iq} - B^{-1}_{i(p-1)} - B^{-1}_{iq} - B^{-1}_{(i-1)p} - B^{-1}_{iq} + B^{-1}_{(i-1)(p-1)} + B^{-1}_{(i-1)q} \right) \\
+  \text{Let } D_{ij} &= \alpha' \Big( B^{-1}_{(i-1)j} + B^{-1}_{i(j-1)} - B^{-1}_{ij} - B^{-1}_{(i-1)(j-1)} \Big) \\
+  \bar{b}_i - \bar{b}_{i-1} &= \left( \tilde{b}_i - \tilde{b}_{i-1} \right) 
+     + \bar{h} \left( D_{iq} - D_{ip} \right) \\
+     & \implies \quad \bar{b}_i - \bar{b}_{i-1} 
+  = \tfrac{1}{\delta_o}\tilde{r}_i + \bar{h} \left( D_{iq} - D_{ip} \right) \\
+  & \implies \quad \delta_o (\bar{b}_i - \bar{b}_{i-1}) 
+  = \tilde{r}_i + \delta_o \bar{h} \left( D_{iq} - D_{ip} \right)
+\tag{R1}
+\end{align}
+
+\begin{align}
+     \\r_p &= \tilde{r}_p + \bar{h} \left( D_{pq} - D_{pp} + \delta_o (\delta_{pq} - \delta_{pp}) \right) \notag \\
+     r_q &= \tilde{r}_q + \bar{h} \left( D_{qq} - D_{qp} + \delta_o (\delta_{qq} - \delta_{qp}) \right)\notag \\
+    \delta_o (\bar{b}_j - \bar{b}_{j-1}) &= -r_j - \bar{h} \, \delta_o (\delta_{jp} - \delta_{jq}) \tag{R2}
+\end{align}
+
+This implies:
+
+\begin{align}
+&1 - \left[ \delta_o ( \bar{b}_p - \bar{b}_{p-1} ) - \delta_o ( \bar{b}_q - \bar{b}_{q-1} ) \right] \\
+&= \left( 1 - \left[ (-r_p - \bar{h}\, \delta_o (\delta_{pp} - \delta_{pq})) - (-r_q - \bar{h}\, \delta_o (\delta_{qp} - \delta_{qq})) \right] \right)
+\notag \\
+&= \left( 1 - \left[ -r_p + r_q - \bar{h}\, \delta_o (\delta_{pp}) - \bar{h}\, \delta_o (\delta_{qq}) \right] \right)\notag \\
+&= 1 + r_p - r_q + \bar{h}\, \delta_o (\delta_{pp}) + \bar{h}\, (\delta_{qq}) \notag \\
+&= 1 + r_p - r_q + 2 \bar{h} \delta_o  \\
+  &= 1 + \tilde{r}_p  + \bar{h} \left( D_{pq} - D_{pp} + \delta_o ( \delta_{pq} - \delta_{pp} ) \right) \notag \\
+  & \qquad - \tilde{r}_q  - \bar{h} \left( D_{qq} - D_{qp} + \bar{h} \delta_o ( \delta_{pq} - \delta{pp} - \delta_{qq} + \delta{qp} ) \right)  + 2 \bar{h} \, \delta_o \\
+  &= 1 + \tilde{r}_p - \tilde{r}_q 
+     + \bar{h} \left( D_{pp} + D_{qp} - D_{pq} - D_{qq} \right) 
+     \end{align}
+     Then, we can now simplify $\bar{h}$
+     \begin{align}
+     &\bar{h} =  \left( 1 + \tilde{r}_p - \tilde{r}_q 
+     + \bar{h} \left( D_{pp} + D_{qp} - D_{pq} - D_{qq} \right) \right)\left( \frac{1}{\delta_s (1 + \tilde{c}^{-1})} \right) \notag \\
+&\bar{h} \left( 1 - \frac{1}{\delta_s (1 + \tilde{c}^{-1})} 
+   \left( D_{pq} + D_{qp} - D_{pp} - D_{qq} \right) \right) 
+   = \left( \tilde{r}_p - \tilde{r}_q \right) 
+      \left( \frac{1}{\delta_s (1 + \tilde{c}^{-1})} \right) \notag \\
+& \bar{h} 
+= \dfrac{ \left( \tilde{r}_p - \tilde{r}_q \right) 
+      \left( \frac{1}{\delta_s (1 + \tilde{c}^{-1})} \right) }
+      { \left( 1 - \left( D_{pq} + D_{qp} - D_{pp} - D_{qq} \right) 
+         \left( \frac{1}{\delta_s (1 + \tilde{c}^{-1})} \right) \right) } \notag \\
+     & \bar{h} = \dfrac{  \tilde{r}_p - \tilde{r}_q   }{ (\delta_s (1 + \tilde{c}^{-1})) + \left( D_{pq} + D_{qp} - D_{pp} - D_{qq} \right)} \notag \\
+     & \bar{h} = \dfrac{  \tilde{r}_p - \tilde{r}_q   }{ (\delta_s + c^{-1}) + \left( D_{pq} + D_{qp} - D_{pp} - D_{qq} \right)} \notag \\
+\end{align}
+
+\bibliographystyle{plainnat}  % or unsrtnat for citation order
+\bibliography{references}
+
+\newpage
+\appendix
+\section{Proof of the main theorem}
+\section{Experiments with Large Language Models}
+\label{app:dnns}
+\subsection{Detailed Setup}
+\paragraph{Task setup.}
+\subsection{Transitive Inference}
+\end{document}

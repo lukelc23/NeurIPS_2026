@@ -1,10 +1,10 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.4.23)  23 APR 2026 16:26
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.4.23)  4 MAY 2026 14:19
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**"c:/Users/lukel/iCloudDrive/Computer/Current/0. Columbia/Research/Analysis/NeurIPS/Exception Math Full.tex"
-(c:/Users/lukel/iCloudDrive/Computer/Current/0. Columbia/Research/Analysis/NeurIPS/Exception Math Full.tex
+**"c:/Computer/NeurIPS_2026/Latex/Exception Math Full.tex"
+(c:/Computer/NeurIPS_2026/Latex/Exception Math Full.tex
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
 (C:\Users\lukel\AppData\Local\Programs\MiKTeX\tex/latex/base\article.cls
@@ -354,7 +354,7 @@ Overfull \hbox (53.42596pt too wide) detected at line 87
 LaTeX Warning: File `r_diff_simulation.png' not found on input line 92.
 
 
-c:/Users/lukel/iCloudDrive/Computer/Current/0. Columbia/Research/Analysis/NeurIPS/Exception Math Full.tex:92: Package pdftex.def Error: File `r_diff_simulation.png' not found: using draft setting.
+c:/Computer/NeurIPS_2026/Latex/Exception Math Full.tex:92: Package pdftex.def Error: File `r_diff_simulation.png' not found: using draft setting.
 
 See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
@@ -390,14 +390,14 @@ Package rerunfilecheck Info: Checksums for `"Exception Math Full".out':
  ) 
 Here is how much of TeX's memory you used:
  10266 strings out of 467871
- 157688 string characters out of 5418376
+ 157376 string characters out of 5418376
  595900 words of memory out of 5000000
  39022 multiletter control sequences out of 15000+600000
  636683 words of font info for 75 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,18n,79p,597b,464s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,18n,79p,546b,464s stack positions out of 10000i,1000n,20000p,200000b,200000s
  <C:\Users\lukel\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\tcrm1200.pk><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr17.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/lukel/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmtt12.pfb>
-Output written on "Exception Math Full.pdf" (6 pages, 157474 bytes).
+Output written on "Exception Math Full.pdf" (6 pages, 157500 bytes).
 PDF statistics:
  110 PDF objects out of 1000 (max. 8388607)
  13 named destinations out of 1000 (max. 500000)
