@@ -1,0 +1,192 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Combined figure (plot-only): requires cells 9 + 11 to have been run
+# ═══════════════════════════════════════════════════════════════════════════
+import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
+import matplotlib.patches as mpatches
+from matplotlib.gridspec import GridSpec
+from matplotlib.legend_handler import HandlerBase
+
+class HandlerColormap(HandlerBase):
+    def __init__(self, cmap, num_stripes=32, **kw):
+        super().__init__(**kw)
+        self.cmap = cmap
+        self.num_stripes = num_stripes
+    def create_artists(self, legend, orig_handle, xdescent, ydescent, width, height, fontsize, trans):
+        stripes = []
+        for i in range(self.num_stripes):
+            s = plt.Rectangle([xdescent + i * width / self.num_stripes, ydescent], width / self.num_stripes, height, fc=self.cmap((i + 0.5) / self.num_stripes), ec="none", transform=trans)
+            stripes.append(s)
+        return stripes
+
+def _draw_matrix_no_cb(ax, M, tm, em, wgm, agm, *, cmap, vmin, vmax, fmt,
+                       tick_labels=None, annotate_cells=None, p_sec=None, q_sec=None):
+    """Like _draw_matrix but without colorbar, for the combined figure."""
+    nn = M.shape[0]
+    ax.imshow(M, cmap=cmap, vmin=vmin, vmax=vmax, aspect="equal", interpolation="nearest")
+    if annotate_cells:
+        for (r1, c1) in annotate_cells:
+            r0, c0 = r1 - 1, c1 - 1
+            if not np.isnan(M[r0, c0]):
+                ax.text(c0, r0, f"{M[r0, c0]:{fmt}}", ha="center", va="center",
+                        fontsize=6, color="black", fontweight="bold", zorder=4,
+                        path_effects=[pe.withStroke(linewidth=0.8, foreground="white")])
+    lw = 1.5
+    for i2 in range(nn):
+        for j2 in range(nn):
+            if tm[i2, j2]:
+                ax.add_patch(plt.Rectangle((j2-0.5, i2-0.5), 1, 1, fill=False, edgecolor="black", lw=lw, zorder=3))
+            elif em[i2, j2]:
+                ax.add_patch(plt.Rectangle((j2-0.5, i2-0.5), 1, 1, fill=False, edgecolor="#ff7f0e", lw=lw, zorder=3))
+            elif wgm[i2, j2]:
+                ax.add_patch(plt.Rectangle((j2-0.5, i2-0.5), 1, 1, fill=False, edgecolor="#2ca02c", lw=lw, zorder=3))
+    # Across-section: block rectangle (upper-right only)
+    if p_sec is not None and q_sec is not None:
+        n_O1 = q_sec - 1
+        n_O2 = nn - p_sec
+        ax.add_patch(plt.Rectangle((p_sec - 0.5, -0.5), n_O2, n_O1, fill=False, edgecolor="#9467bd", lw=lw, zorder=3))
+    labels = tick_labels if tick_labels is not None else [str(k+1) for k in range(nn)]
+    ax.set_xticks(range(nn)); ax.set_xticklabels(labels, fontsize=6)
+    ax.set_yticks(range(nn)); ax.set_yticklabels(labels, fontsize=6)
+    ax.set_xlabel("Item 2", fontsize=6, labelpad=28)
+    ax.tick_params(axis="both", length=1, pad=0.5)
+
+with plt.rc_context({'hatch.linewidth': 3.0, 'figure.dpi': 200}):
+    fig = plt.figure(figsize=(FIG_W_IN, FIG_W_IN*0.6), layout='constrained')
+    fig.get_layout_engine().set(w_pad=4/72, h_pad=6/72, wspace=0.08, hspace=0.30)
+
+    gs = GridSpec(2, 4, figure=fig,
+                 width_ratios=[1, 1, 1, 1.5],
+                 height_ratios=[1, 1],
+                 wspace=0.15, hspace=0.35)
+
+    gs_right = gs[0:2, 3].subgridspec(3, 1, height_ratios=[0.15, 1, 1], hspace=0.4)
+
+    # ── Row 0, cols 0-2: 3 heatmaps (Cases A, B, C) ─────────────────────
+    conditions = [((1 - a) / 2 * delta_s + k_d, c_inv) for a, c_inv, _ in conditions_alpha]
+
+    for col_idx, ((k_o_c, c_inv_c), (alpha_c, _, case_label)) in enumerate(
+            zip(conditions, conditions_alpha)):
+        c_reg_c = 1.0 / (c_inv_c * delta_s)
+        df_h = build_fjk_df(n, p, q, k_o_c, c_reg_c, k_s, k_d)
+        sub_h = df_h[df_h["phase"] == "post"].copy()
+        M_m, tm, em, wgm, agm = _build_matrix(sub_h, "margin")
+        ext = max(abs(np.nanmax(M_m)), abs(np.nanmin(M_m)), 0.1)
+        ax_h = fig.add_subplot(gs[0, col_idx])
+        _draw_matrix_no_cb(ax_h, M_m, tm, em, wgm, agm,
+                           cmap="bwr_r", vmin=-ext, vmax=ext, fmt="+.2f",
+                           p_sec=p, q_sec=q)
+        ax_h.set_title(
+            f"{title_prefix_map.get(col_idx, '')}\n$\\alpha={alpha_c:.2f}$, $\\tilde{{c}}^{{-1}}={c_inv_c}$",
+            fontsize=6, pad=2)
+        if col_idx == 0:
+            ax_h.set_ylabel("Item 1", fontsize=6, labelpad=1)
+        else:
+            ax_h.set_ylabel("")
+            # ax_h.set_yticklabels([])
+
+    # # Gradient color legend for heatmaps
+    # cmap_handle = mpatches.Patch()
+    # heatmap_leg = fig.legend([cmap_handle], ["Item 1 < Item 2          Item 1 > Item 2"], handler_map={cmap_handle: HandlerColormap(plt.cm.bwr_r)}, fontsize=6, frameon=False, bbox_to_anchor=(0.35, 1.0), loc="upper center", handlelength=4, handleheight=0.8)
+    # heatmap_leg.set_in_layout(False)
+
+    # ── Row 1, cols 0-2: 3 phase diagrams ────────────────────────────────
+    ylim_bot = 1e-2
+    ylim_top = 1e2
+    ax_phase_first = None
+
+    for i, (cfg, (test, train)) in enumerate(zip(configs, results)):
+        if i == 0:
+            ax_ph = fig.add_subplot(gs[1, i])
+            ax_phase_first = ax_ph
+        else:
+            ax_ph = fig.add_subplot(gs[1, i], sharey=ax_phase_first)
+
+        train_fill   = np.where(np.isnan(train), ylim_top, train)
+        test_fill    = np.where(np.isnan(test),  ylim_top, test)
+        overlap_fill = np.minimum(train_fill, test_fill)
+
+        ax_ph.plot(alpha_vals, train, lw=0.8, color=ORANGE, label='Memorization')
+        ax_ph.plot(alpha_vals, test,  lw=0.8, color=PURPLE, label='Cross Section Gen.')
+
+        ax_ph.fill_between(alpha_vals, overlap_fill, train_fill,
+                           where=(train_fill > test_fill), interpolate=True,
+                           alpha=0.12, color=ORANGE)
+        ax_ph.fill_between(alpha_vals, overlap_fill, test_fill,
+                           where=(test_fill > train_fill), interpolate=True,
+                           alpha=0.40, color=PURPLE)
+        ax_ph.fill_between(alpha_vals, ylim_bot, overlap_fill,
+                           facecolor=ORANGE, alpha=0.15)
+        ax_ph.fill_between(alpha_vals, ylim_bot, overlap_fill, facecolor='none',
+                           edgecolor=PURPLE, hatch='||', linewidth=0, alpha=0.6)
+        ax_ph.add_patch(mpatches.Rectangle((0, 0), 0, 0,
+                        facecolor=ORANGE, edgecolor=PURPLE, hatch='||',
+                        alpha=0.5, label='Correct on Both'))
+
+        ax_ph.set_xlabel(r'$\alpha$', fontsize=6, labelpad=1)
+        title_short = cfg['title'].split('\n')[0]
+        ax_ph.set_title(title_short, fontsize=6, pad=2)
+        ax_ph.tick_params(axis='both', length=1.5, pad=1, labelsize=6)
+        ax_ph.set_yscale('log')
+        ax_ph.set_xlim(0.0, 0.40)
+        ax_ph.set_ylim(ylim_bot, ylim_top)
+        ax_ph.grid(False)
+
+        if i == 0:
+            ax_ph.set_ylabel(r'$\tilde{c}^{-1}$', fontsize=6, rotation=0, labelpad=4)
+        else:
+            ax_ph.set_yticklabels([])
+
+    # ax_phase_first.legend(fontsize=6, framealpha=0.9, edgecolor='gray',
+    #                       bbox_to_anchor=(0.5, 1.15), loc='center', ncol=3, handlelength=1.2)
+
+    # Case markers on base case phase diagram
+    for alpha_c, c_inv_c, case_lbl in conditions_alpha:
+        ax_phase_first.plot(alpha_c, c_inv_c, marker='*', markersize=8, color='black', zorder=5)
+        ax_phase_first.annotate(f'{case_lbl}', (alpha_c, c_inv_c),
+                               textcoords='offset points', xytext=(5, 5),
+                               fontsize=6, fontweight='bold')
+
+    # ── Row 0, col 3: perf vs. geometry (α sweep, unregularized) ─────────
+    ax_3b1 = fig.add_subplot(gs_right[1])
+    ax_3b1.plot(alphas_3b1, mem_perf_3b1, lw=0.9, color='tab:orange', label='Memorization')
+    ax_3b1.plot(alphas_3b1, within_perf_3b1, lw=0.9, color='tab:green', label='Within-section gen.')
+    ax_3b1.plot(alphas_3b1, cross_perf_3b1, lw=0.9, color='tab:purple', label='Cross-section gen.')
+    ax_3b1.axhline(0, color='gray', lw=0.4, ls='--', alpha=0.5)
+    ax_3b1.set_xlabel(r'$\alpha$', fontsize=6, labelpad=1)
+    ax_3b1.set_ylabel('Min. margin', fontsize=6, labelpad=1)
+    # ax_3b1.set_title(rf'Perf. vs. geometry ($\tilde{{c}}\to 0$)', fontsize=6, pad=2)
+    # ax_3b1.legend(fontsize=6, framealpha=0.8, bbox_to_anchor=(0.5, 1.18), loc='center', ncol=1)
+    handles, labels = ax_3b1.get_legend_handles_labels()
+    leg = ax_3b1.legend(handles, labels, fontsize=6, frameon=False,
+                        bbox_to_anchor=(0.5, 1.3), loc='lower center', ncol=1)
+    leg.set_in_layout(True)
+    ax_3b1.set_xlim(0, 1)
+    ax_3b1.tick_params(axis='both', labelsize=6, length=1.5, pad=1)
+
+    # ── Row 1, col 3: perf vs. regularisation (c̃⁻¹ sweep, fixed α) ──────
+    ax_3b2 = fig.add_subplot(gs_right[2])
+    ax_3b2.plot(c_inv_vals, mem_perf_3b2, lw=0.9, color='tab:orange', label='Memorization')
+    ax_3b2.plot(c_inv_vals, within_perf_3b2, lw=0.9, color='tab:green', label='Within-section gen.')
+    ax_3b2.plot(c_inv_vals, cross_perf_3b2, lw=0.9, color='tab:purple', label='Cross-section gen.')
+    ax_3b2.axhline(0, color='gray', lw=0.4, ls='--', alpha=0.5)
+    ax_3b2.set_xscale('log')
+    ax_3b2.set_xlabel(r'$\tilde{c}^{-1}$', fontsize=6, labelpad=1)
+    ax_3b2.set_ylabel('Min. margin', fontsize=6, labelpad=1)
+    # ax_3b2.set_title(rf'Perf. vs. regularisation ($\alpha$={alpha_fixed})', fontsize=6, pad=2)
+    # ax_3b2.legend(fontsize=6, framealpha=0.8, bbox_to_anchor=(0.5, 1.18), loc='center', ncol=1)
+    ax_3b2.set_xlim(c_inv_vals[0], c_inv_vals[-1])
+    ax_3b2.set_ylim(-0.25, 1.75)
+    ax_3b2.tick_params(axis='both', labelsize=6, length=1.5, pad=1)
+
+    # ── Vertical dotted divider ──────────────────────────────────────────
+    fig.add_artist(mlines.Line2D(
+        [0.73, 0.73], [0.02, 0.98],
+        transform=fig.transFigure, color='black',
+        linestyle=':', linewidth=1.0, zorder=10))
+    fig.text(0.02, 0.97, 'A', fontsize=10, fontweight='bold')   # heatmaps (top-left)
+    fig.text(0.74, 0.97, 'B', fontsize=10, fontweight='bold')   # right column (top-right)
+    fig.text(0.02, 0.50, 'C', fontsize=10, fontweight='bold')   # phase diagrams (bottom-left)
+    plt.show()
+    fig.savefig("figure_4_combined.pdf", bbox_inches="tight")
+    print("Saved → figure_4_combined.pdf")
